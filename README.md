@@ -36,10 +36,58 @@ Standard **UCI**. Regex:
 - Game ends on checkmate / stalemate / 50-move rule / threefold repetition / insufficient material
 - Move cap: 300 plies (safety)
 
-## Results
+## Results: 100-game balanced tournament
 
-Tournament results will be added here after the 100-game balanced run completes (see
-`simulate.py`).
+100 games with balanced color assignment (50 Quick=White, 50 Thinker=White), concurrency 20,
+300-ply safety cap. Wall-clock: ~100 minutes.
+
+| Outcome | Count | Share |
+|---|---|---|
+| 🤝 **Draws** | **74** | **74%** |
+| ○ Thinker wins | 13 | 13% |
+| ● Quick wins | 11 | 11% |
+| ⚠ Errors | 2 | 2% (both `ReadTimeout`) |
+
+Chess result breakdown (python-chess `board.result()`):
+
+- `1/2-1/2` (draws by 50-move / threefold / insufficient material / stalemate): 53
+- `*` (hit 300-ply cap): 21
+- `1-0` (white wins by checkmate): 20
+- `0-1` (black wins by checkmate): 4
+
+### The first-move advantage dominates everything
+
+| White side | Games | Quick wins | Thinker wins | Draws |
+|---|---|---|---|---|
+| **Quick = White** | 49 | **9** | 2 | 38 |
+| **Thinker = White** | 49 | 2 | **11** | 36 |
+
+Whoever plays White wins virtually all decisive games. The 20 checkmate-for-white results vs. 4 for
+black show how much harder Gemma finds it to convert a game as Black — especially against even an
+equally-weak opponent who gets the first move.
+
+### Observations
+
+- **74% of games end in draws** — roughly half by python-chess's automatic rules (50-move,
+  threefold, stalemate, insufficient material), half by hitting the 300-move cap. Gemma can
+  occasionally checkmate (24 decisive games) but nowhere near reliably.
+- **Thinker edges Quick slightly (13 vs. 11)** but the gap is small — both players are roughly
+  equally weak at chess, and the CoT hurts at least as much as it helps (Thinker's occasional
+  over-analysis leads to time-wasting repetitions).
+- **Huge color asymmetry**: White wins ~5× more often than Black. Consistent with chess's
+  well-known first-move advantage, amplified by weak play where neutralising the opening edge
+  requires precise defence.
+
+### Performance
+
+- Total API calls: 19,129
+- Avg latency: 5.72 s
+- Throughput: 3.2 calls/s
+- Retries: 362 (1.9% — Gemma rarely returns an illegal UCI move)
+- Fallbacks: 11
+- Timeouts: 2 (both `ReadTimeout` after 90 s)
+- Avg decisive-game length: ~100 moves (`1-0` / `0-1`); draws tend to hit the 300-ply cap at 219
+  avg moves.
 
 ## Quick start
 
